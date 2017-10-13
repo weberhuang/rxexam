@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.extr.persistence.UserMapper">
+
+	<!-- User -->
+	<insert id="insertUser" useGeneratedKeys="true" keyProperty="id"
+		parameterType="com.extr.domain.user.User">
+		insert into
+		t_sys_user(username,password,email,phone,create_time,field_id,create_user,valid,truename,province,company,department)
+		value
+		(#{username},#{password},#{email},#{phone},#{create_time},#{field_id},#{create_user},#{valid},#{truename},#{province},#{company},#{department})
+	</insert>
+	<update id="updateUser" parameterType="com.extr.domain.user.User">
+		update t_sys_user
+		<set>
+
+			<if test="user.truename != null">truename=#{user.truename},</if>
+			<if test="user.password != null">password=#{user.password},</if>
+			<if test="user.email != null">email=#{user.email},</if>
+			<if test="user.phone != null">phone=#{user.phone},</if>
+			<if test="user.create_time != null">create_time=#{user.create_time},</if>
+			<if test="user.field_id != null">field_id=#{user.field_id},</if>
+			<if test="user.create_user != null">create_user=#{user.create_user},</if>
+			<if test="user.valid != null">valid=#{user.valid},</if>
+			<if test="user.loginTime != null">login_time=#{user.loginTime},</if>
+			<if test="user.lastLoginTime != null">last_login_time=#{user.lastLoginTime},</if>
+			<if test="user.province != 0">province=#{user.province},</if>
+			<if test="user.company != null">company=#{user.company},</if>
+			<if test="user.department != null">department=#{user.department},</if>
+			<if test="user.username != null">username=#{user.username}</if>
+			<if test="user.id != 0">id=#{user.id}</if>
+		</set>
+		<where>
+			(username = #{user.username} or id=#{user.id})
+			<if test="oldpassword != null">
+				and password=#{oldpassword}
+			</if>
+		</where>
+	</update>
+	<delete id="deleteUser" parameterType="com.extr.domain.user.User">
+		delete from t_sys_user where
+		id=#{id}
+	</delete>
+	<select id="getUserById" resultType="com.extr.domain.user.User">
+		select a.id as id,a.username
+		as username,a.truename as truename,
+		a.`password` as `password`,a.email
+		as email,a.phone as phone,
+		a.create_time as create_time,a.create_user as create_user,
+		a.valid as valid,a.field_id as
+		fieldId,
+		b.field_name as fieldName,
+		a.last_login_time as lastLoginTime,
+		a.login_time as loginTime,province,company,department from t_sys_user a,et_field b
+		where
+		id=#{id} and
+		a.field_id=b.field_id
+	</select>
+	<select id="getUserByName" resultType="com.extr.domain.user.User">
+		select a.id as
+		id,a.username as username,a.truename as truename,
+		a.`password` as
+		`password`,a.email as email,a.phone as phone,
+		a.create_time as
+		create_time,a.create_user as create_user,
+		a.valid as valid,a.field_id as fieldId,
+		b.field_name as
+		fieldName,a.last_login_time as lastLoginTime,
+		a.login_time as loginTime,province,company,department
+		from t_sys_user a,et_field b where username=#{username}
+		and
+		a.field_id=b.field_id
+	</select>
+	<select id="getAllUserList" resultType="com.extr.domain.user.User">
+		select a.id as
+		id,a.username as username,a.truename as truename,
+		a.`password` as
+		`password`,a.email as email,a.phone as phone,
+		a.create_time as
+		create_time,b.username as creator,(select field_name from et_field where field_id=a.field_id) as fieldName,
+		a.valid as valid,province,company,department from t_sys_user a LEFT JOIN t_sys_user b on
+		a.create_user=b.id order by a.id
+	</select>
+	<insert id="insertRole" useGeneratedKeys="true" keyProperty="id"
+		parameterType="com.extr.domain.user.Role">
+		insert into t_sys_role(authority,name) value
+		(#{authority},#{name})
+	</insert>
+	<update id="updateRole" parameterType="com.extr.domain.user.Role">
+		update t_sys_role
+		<set>
+			<if test="authority != null">authority=#{authority},</if>
+			<if test="name != null">name=#{name},</if>
+		</set>
+		where id = #{id}
+	</update>
+	<delete id="deleteRole" parameterType="com.extr.domain.user.Role">
+		delete from t_sys_role where
+		id=#{id}
+	</delete>
+	<select id="getAllRoleList" resultType="com.extr.domain.user.Role">
+		select * from t_sys_role
+	</select>
+	<insert id="grantUserRole">
+		insert into t_sys_user_role(u_id,r_id) value
+		(#{u_id},#{r_id})
+	</insert>
+	<select id="getUserListByRoleId" resultType="com.extr.domain.user.User">
+		select a.id as
+		id,a.username as username,a.truename as truename,
+		a.`password` as
+		`password`,a.email as email,a.phone as phone,
+		a.create_time as
+		create_time,
+		(select username from t_sys_user
+		m where m.id=a.create_user) as creator,(select field_name from et_field where field_id=a.field_id) as fieldName,
+		a.enabled as enabled,province,company,department from t_sys_user
+		a,t_sys_user_role b
+		where a.id=b.u_id and
+		b.r_id=#{r_id}
+	</select>
+	<select id="getRoleListByUserId" resultType="com.extr.domain.user.Role">
+		select c.* from
+		t_sys_user a,t_sys_user_role b,t_sys_role c
+		where a.id=b.u_id and
+		b.r_id=c.id and a.id=#{u_id}
+		order by c.name
+	</select>
+	<delete id="deleteUserRoleByUserId">
+		delete from t_sys_user_role where u_id=#{u_id}
+	</delete>
+
+</mapper>
